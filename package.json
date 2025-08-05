@@ -1,0 +1,78 @@
+{
+  "name": "rgb-depth-cropper-tool",
+  "version": "1.1.0",
+  "description": "A modern Electron desktop app for interactively cropping RGB images and their corresponding depth maps with integrated smart validation",
+  "main": "main.js",
+  "bin": {
+    "rgb-depth-cropper": "./launcher.js"
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "webpack --config webpack.config.js",
+    "dev": "webpack --watch & electron .",
+    "clean": "rm -rf dist",
+    "setup": "npm install && npm run build && npm start",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node install.js"
+  },
+  "keywords": [
+    "rgb",
+    "depth",
+    "cropper",
+    "electron",
+    "desktop",
+    "image-processing",
+    "computer-vision",
+    "depth-maps",
+    "numpy",
+    "interactive"
+  ],
+  "author": "Subhransu S. Bhattacharjee (Rudra)",
+  "license": "Custom",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1ssb/RGBD_cropper_tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/1ssb/RGBD_cropper_tool/issues"
+  },
+  "homepage": "https://github.com/1ssb/RGBD_cropper_tool#readme",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "main.js",
+    "launcher.js",
+    "preload.js",
+    "index.html",
+    "install.js",
+    "webpack.config.js",
+    ".babelrc",
+    "LICENSE",
+    "README.md"
+  ],
+  "dependencies": {
+    "electron": "^37.2.4",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.525.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.100.2",
+    "webpack-cli": "^6.0.1"
+  },
+  "overrides": {
+    "boolean": "3.2.0"
+  }
+}
