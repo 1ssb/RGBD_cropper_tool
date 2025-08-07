@@ -158,18 +158,4 @@ project-root/
 
 This project uses a custom license that **requires citation** when used in research or publications. See [LICENSE](./LICENSE) for full details.
 
-**Citation Requirement**: Any use of this software in research, publications, or derivative works MUST include a citation to this repository.
-
-**Example citation**:
-
-```
-@software{bhattacharjee2025rgb,
-  author    = {Bhattacharjee, Subhransu S.},
-  year      = {2025},
-  title     = {{RGB-Depth Cropper Tool}},
-  url       = {https://github.com/1ssb/RGBD_cropper_tool},
-  note      = {Computer software}
-}
-```
-
 **For questions or improvements, open an issue or PR.**
