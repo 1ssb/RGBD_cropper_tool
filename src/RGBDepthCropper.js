@@ -57,7 +57,7 @@ const RGBDepthCropper = () => {
     details.depthDimensions = { width: depthWidth, height: depthHeight };
 
     if (rgbWidth !== depthWidth || rgbHeight !== depthHeight) {
-      issues.push(`Dimension mismatch: RGB (${rgbWidth}x${rgbHeight}) vs Depth (${depthWidth}x${depthHeight})`);
+      issues.push(`RGB and Depth dimensions do not match: RGB (${rgbWidth}x${rgbHeight}) vs Depth (${depthWidth}x${depthHeight})`);
     } else {
       details.dimensionsMatch = true;
     }
@@ -405,6 +405,22 @@ const RGBDepthCropper = () => {
     setCropArea(null);
   };
 
+  // Reset all images and depth data
+  const resetAll = () => {
+    setRgbImage(null);
+    setDepthData(null);
+    setCropArea(null);
+    setImageLoaded(false);
+    setDepthLoaded(false);
+    setError('');
+    setValidationStatus({
+      isValid: false,
+      issues: [],
+      warnings: [],
+      details: {}
+    });
+  };
+
   // Draw image and overlay (crop interior = image, exterior = dark overlay, border = visible, NO white box)
   const drawImage = useCallback(() => {
     const canvas = canvasRef.current;
@@ -458,7 +474,7 @@ const RGBDepthCropper = () => {
       // Generate timestamp for folder name
       const now = new Date();
       const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19); // YYYY-MM-DDTHH-MM-SS
-      const folderName = `input_${timestamp}`;
+      const folderName = `rgbd_crop_${timestamp}`;
 
       // --- Create RGB PNG ---
       const canvas = document.createElement('canvas');
@@ -538,13 +554,27 @@ const RGBDepthCropper = () => {
         type: 'application/json'
       });
 
-      // --- Create ZIP using JSZip ---
+      // --- Create ZIP using JSZip with proper folder structure ---
       const zip = new JSZip();
 
-      // Add files to the folder structure
-      zip.file(`${folderName}/rgb.png`, rgbBlob);
-      zip.file(`${folderName}/depth.npy`, depthBlob);
-      zip.file(`${folderName}/crop_metadata.json`, metadataBlob);
+      // Create input folder with original files
+      const inputFolder = zip.folder('input');
+
+      // Add original RGB image to input folder
+      const originalRgbResponse = await fetch(rgbImage);
+      const originalRgbBlob = await originalRgbResponse.blob();
+      inputFolder.file('rgb.png', originalRgbBlob);
+
+      // Add original depth.npy to input folder (use the original depth data)
+      const originalDepthBuffer = createNpyFile(data, shape);
+      const originalDepthBlob = new Blob([originalDepthBuffer], { type: 'application/octet-stream' });
+      inputFolder.file('depth.npy', originalDepthBlob);
+
+      // Create output folder with cropped files
+      const outputFolder = zip.folder('output');
+      outputFolder.file('rgb.png', rgbBlob);
+      outputFolder.file('depth.npy', depthBlob);
+      outputFolder.file('crop_metadata.json', metadataBlob);
 
       // Generate and download ZIP
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -613,9 +643,28 @@ const RGBDepthCropper = () => {
               </label>
             </div>
           </div>
-          <button onClick={handleExit} className="rgbd-btn rgbd-btn-exit">
-            Exit
-          </button>
+          <div className="rgbd-toolbar-buttons">
+            <div className="rgbd-button-stack">
+              <button
+                onClick={resetAll}
+                disabled={!imageLoaded && !depthLoaded}
+                className="rgbd-btn rgbd-btn-reset-all"
+                title="Clear all images and depth data"
+              >
+                <RotateCcw size={14} />
+                <span>Reset All</span>
+              </button>
+              <button
+                onClick={clearCrop}
+                disabled={!cropArea}
+                className="rgbd-btn rgbd-btn-reset-crop"
+                title="Clear current crop area"
+              >
+                <RotateCcw size={14} />
+                <span>Reset Crop</span>
+              </button>
+            </div>
+          </div>
         </div>
         {/* Image Container - Full Width */}
         <div className="rgbd-canvas-container">
@@ -641,6 +690,13 @@ const RGBDepthCropper = () => {
           {!rgbImage && <div className="rgbd-placeholder">Upload RGB image to begin</div>}
         </div>
 
+        {/* Crop Info Display - Fixed Position Below Image */}
+        {cropArea && (
+          <div className="rgbd-crop-info-fixed">
+            Crop Area: {Math.round(cropArea.width)} × {Math.round(cropArea.height)} px at ({Math.round(cropArea.x)}, {Math.round(cropArea.y)})
+          </div>
+        )}
+
         {/* Status and Controls - Below Image */}
         <div className="rgbd-controls-section">
           <div className="rgbd-status">
@@ -648,6 +704,14 @@ const RGBDepthCropper = () => {
             <div className={imageLoaded ? 'ok' : 'not'}>RGB: {imageLoaded ? 'Loaded' : 'Not loaded'}</div>
             <div className={depthLoaded ? 'ok' : 'not'}>Depth: {depthLoaded ? 'Loaded' : 'Not loaded'}</div>
             {depthData && <div className="shape">Depth Shape: {depthData.shape.join(' × ')}</div>}
+            {imageLoaded && depthLoaded && imgElementRef.current && (
+              <div className={validationStatus.details?.dimensionsMatch ? 'ok' : 'error'}>
+                {validationStatus.details?.dimensionsMatch
+                  ? 'Dimensions: Match ✓'
+                  : `Dimensions: Do not match ✗ (RGB: ${imgElementRef.current.naturalWidth}×${imgElementRef.current.naturalHeight}, Depth: ${depthData.shape[1]}×${depthData.shape[0]})`
+                }
+              </div>
+            )}
           </div>
 
           {/* Robust Validation Status Display */}
@@ -744,33 +808,20 @@ const RGBDepthCropper = () => {
               disabled={!cropArea || !imageLoaded || !depthLoaded || !validationStatus.isValid}
               className={`rgbd-btn rgbd-btn-download ${validationStatus.isValid ? 'valid' : 'invalid'}`}
               title={validationStatus.isValid ?
-                'Download cropped RGB, depth, and metadata as ZIP' :
+                'Download cropped RGB, depth, and metadata as ZIP with input files' :
                 `Validation issues: ${validationStatus.issues.join(', ')}`
               }
             >
               <Download size={22} />
               <span>
                 {validationStatus.isValid ?
-                  '✅ Download ZIP (RGB + Depth + Metadata)' :
+                  '✅ Download ZIP (Input + Output + Metadata)' :
                   `❌ Fix ${validationStatus.issues.length} Issue${validationStatus.issues.length !== 1 ? 's' : ''}`
                 }
               </span>
             </button>
-            <button
-              onClick={clearCrop}
-              disabled={!cropArea}
-              className="rgbd-btn rgbd-btn-reset"
-            >
-              <RotateCcw size={18} />
-              <span>Reset Crop</span>
-            </button>
           </div>
         </div>
-        {cropArea && (
-          <div className="rgbd-crop-info">
-            Crop Area: {Math.round(cropArea.width)} × {Math.round(cropArea.height)} px at ({Math.round(cropArea.x)}, {Math.round(cropArea.y)})
-          </div>
-        )}
         <div className="rgbd-footer">
           <p className="rgbd-copyright">
             © {new Date().getFullYear()} <a href="https://1ssb.github.io" target="_blank" rel="noopener noreferrer">Subhransu S. Bhattacharjee</a>. All rights reserved.
@@ -782,3 +833,4 @@ const RGBDepthCropper = () => {
 };
 
 export default RGBDepthCropper;
+
