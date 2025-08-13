@@ -37,6 +37,12 @@ const RGBDepthCropper = () => {
         if (file.name.toLowerCase().endsWith('.png') ||
           file.name.toLowerCase().endsWith('.jpg') ||
           file.name.toLowerCase().endsWith('.jpeg')) {
+          // Clear previous crop area when loading new RGB image
+          setCropArea(null);
+          setIsDragging(false);
+          setDragMode('create');
+          setDragStart({ x: 0, y: 0 });
+
           const dataUrl = await readFileAsDataURL(file);
           setRgbImage(dataUrl);
           setImageLoaded(true);
@@ -329,6 +335,12 @@ const RGBDepthCropper = () => {
     const file = e.target.files[0];
     if (!file) return;
     try {
+      // Clear previous crop area when loading new RGB image
+      setCropArea(null);
+      setIsDragging(false);
+      setDragMode('create');
+      setDragStart({ x: 0, y: 0 });
+
       const dataUrl = await readFileAsDataURL(file);
       setRgbImage(dataUrl);
       setImageLoaded(true);
@@ -446,22 +458,56 @@ const RGBDepthCropper = () => {
 
   const clearCrop = () => {
     setCropArea(null);
+    setIsDragging(false);
+    setDragMode('create');
+    setDragStart({ x: 0, y: 0 });
+
+    // Redraw the image without crop overlay
+    const canvas = canvasRef.current;
+    const img = imgElementRef.current;
+    if (canvas && img && imageLoaded) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+    }
   };
 
   // Reset all images and depth data
   const resetAll = () => {
+    // Clear all state
     setRgbImage(null);
     setDepthData(null);
     setCropArea(null);
     setImageLoaded(false);
     setDepthLoaded(false);
     setError('');
+    setIsDragging(false);
+    setDragMode('create');
+    setDragStart({ x: 0, y: 0 });
+
+    // Reset validation status
     setValidationStatus({
       isValid: false,
       issues: [],
       warnings: [],
       details: {}
     });
+
+    // Clear canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+
+    // Clear image element
+    const img = imgElementRef.current;
+    if (img) {
+      img.src = '';
+      img.onload = null;
+    }
   };
 
   // Draw image and overlay (crop interior = image, exterior = dark overlay, border = visible, NO white box)
@@ -500,6 +546,14 @@ const RGBDepthCropper = () => {
   }, [cropArea, imageLoaded]);
 
   useEffect(() => { drawImage(); }, [drawImage]);
+
+  // Handle image loading state properly
+  useEffect(() => {
+    if (!rgbImage) {
+      setImageLoaded(false);
+      setCropArea(null);
+    }
+  }, [rgbImage]);
 
 
 
