@@ -20,6 +20,49 @@ const RGBDepthCropper = () => {
     details: {}
   });
 
+  // Global drag-and-drop handlers
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = Array.from(e.dataTransfer.files);
+    
+    for (const file of files) {
+      try {
+        if (file.name.toLowerCase().endsWith('.png') || 
+            file.name.toLowerCase().endsWith('.jpg') || 
+            file.name.toLowerCase().endsWith('.jpeg')) {
+          const dataUrl = await readFileAsDataURL(file);
+          setRgbImage(dataUrl);
+          setImageLoaded(true);
+          setError('');
+        } else if (file.name.toLowerCase().endsWith('.npy')) {
+          const arrayBuffer = await readFileAsArrayBuffer(file);
+          const parsedData = parseNpyFile(arrayBuffer);
+          setDepthData(parsedData);
+          setDepthLoaded(true);
+          setError('');
+        }
+      } catch (err) {
+        setError(`Error loading ${file.name}: ${err.message}`);
+      }
+    }
+  }, []);
+
+  // Register global drag-and-drop event listeners
+  useEffect(() => {
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+    return () => {
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [handleDragOver, handleDrop]);
 
 
   // Comprehensive validation system
@@ -557,24 +600,24 @@ const RGBDepthCropper = () => {
       // --- Create ZIP using JSZip with proper folder structure ---
       const zip = new JSZip();
 
-      // Create input folder with original files
-      const inputFolder = zip.folder('input');
+      // Create original folder with original files
+      const originalFolder = zip.folder('original');
 
-      // Add original RGB image to input folder
+      // Add original RGB image to original folder
       const originalRgbResponse = await fetch(rgbImage);
       const originalRgbBlob = await originalRgbResponse.blob();
-      inputFolder.file('rgb.png', originalRgbBlob);
+      originalFolder.file('rgb.png', originalRgbBlob);
 
-      // Add original depth.npy to input folder (use the original depth data)
+      // Add original depth.npy to original folder (use the original depth data)
       const originalDepthBuffer = createNpyFile(data, shape);
       const originalDepthBlob = new Blob([originalDepthBuffer], { type: 'application/octet-stream' });
-      inputFolder.file('depth.npy', originalDepthBlob);
+      originalFolder.file('depth.npy', originalDepthBlob);
 
-      // Create output folder with cropped files
-      const outputFolder = zip.folder('output');
-      outputFolder.file('rgb.png', rgbBlob);
-      outputFolder.file('depth.npy', depthBlob);
-      outputFolder.file('crop_metadata.json', metadataBlob);
+      // Create crop folder with cropped files
+      const cropFolder = zip.folder('crop');
+      cropFolder.file('rgb.png', rgbBlob);
+      cropFolder.file('depth.npy', depthBlob);
+      cropFolder.file('crop_metadata.json', metadataBlob);
 
       // Generate and download ZIP
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -815,7 +858,7 @@ const RGBDepthCropper = () => {
               <Download size={22} />
               <span>
                 {validationStatus.isValid ?
-                  '✅ Download ZIP (Input + Output + Metadata)' :
+                  '✅ Download ZIP (Original + Crop + Metadata)' :
                   `❌ Fix ${validationStatus.issues.length} Issue${validationStatus.issues.length !== 1 ? 's' : ''}`
                 }
               </span>
