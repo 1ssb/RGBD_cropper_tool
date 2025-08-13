@@ -29,14 +29,14 @@ const RGBDepthCropper = () => {
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const files = Array.from(e.dataTransfer.files);
-    
+
     for (const file of files) {
       try {
-        if (file.name.toLowerCase().endsWith('.png') || 
-            file.name.toLowerCase().endsWith('.jpg') || 
-            file.name.toLowerCase().endsWith('.jpeg')) {
+        if (file.name.toLowerCase().endsWith('.png') ||
+          file.name.toLowerCase().endsWith('.jpg') ||
+          file.name.toLowerCase().endsWith('.jpeg')) {
           const dataUrl = await readFileAsDataURL(file);
           setRgbImage(dataUrl);
           setImageLoaded(true);
@@ -751,7 +751,7 @@ const RGBDepthCropper = () => {
               <div className={validationStatus.details?.dimensionsMatch ? 'ok' : 'error'}>
                 {validationStatus.details?.dimensionsMatch
                   ? 'Dimensions: Match ✓'
-                  : `Dimensions: Do not match ✗ (RGB: ${imgElementRef.current.naturalWidth}×${imgElementRef.current.naturalHeight}, Depth: ${depthData.shape[1]}×${depthData.shape[0]})`
+                  : `Dimensions: Do not match ✗ (RGB: ${imgElementRef.current.naturalWidth}×${imgElementRef.current.naturalHeight}, Depth: ${validationStatus.details?.depthDimensions?.width || depthData.shape[1]}×${validationStatus.details?.depthDimensions?.height || depthData.shape[0]})`
                 }
               </div>
             )}
