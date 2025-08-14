@@ -58,7 +58,7 @@
     "README.md"
   ],
   "dependencies": {
-    "electron": "^37.2.4",
+    "electron": "^37.2.6",
     "jszip": "^3.10.1",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
@@ -74,8 +74,5 @@
     "style-loader": "^4.0.0",
     "webpack": "^5.100.2",
     "webpack-cli": "^6.0.1"
-  },
-  "overrides": {
-    "boolean": "3.2.0"
   }
 }
