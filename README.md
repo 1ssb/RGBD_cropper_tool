@@ -1,6 +1,6 @@
-# RGB-Depth Cropper v2.0.0
+# RGB-Depth Cropper v2.5.0
 
-A modern, minimal Electron + React desktop app for interactively cropping RGB images and their corresponding depth maps with **integrated smart validation**, **reset functionality**, and **organized download structure**.
+A modern, minimal Electron + React desktop app for interactively cropping RGB images and their corresponding depth maps with **integrated smart validation**, **drag-and-drop support**, **reset functionality**, and **organized download structure**.
 
 ## 🚀 Quick Start
 
@@ -33,7 +33,7 @@ npm install -g rgb-depth-cropper-tool
 npm install rgb-depth-cropper-tool
 
 # Or use the exact version
-npm install rgb-depth-cropper-tool@2.0.0
+npm install rgb-depth-cropper-tool@2.5.0
 ```
 
 ### Running the App
@@ -50,7 +50,7 @@ npx rgb-depth-cropper
 
 - **Package Name**: `rgb-depth-cropper-tool`
 - **Command**: `rgb-depth-cropper`
-- **Latest Version**: 2.0.0
+- **Latest Version**: 2.5.0
 - **License**: Custom (requires citation)
 - **Platform**: Cross-platform (Windows, macOS, Linux)
 
@@ -71,26 +71,39 @@ sudo chmod 4755 $(npm root -g)/rgb-depth-cropper-tool/node_modules/electron/dist
 
 ## Usage
 
-1. **📷 Upload** your RGB image (PNG) and depth map (.npy) using the beautiful upload buttons
+1. **📷 Upload** your RGB image (PNG) and depth map (.npy) using the beautiful upload buttons or **drag-and-drop** files anywhere in the window
 2. **🎯 Crop** interactively by clicking and dragging on the image
 3. **✅ Watch Validation** - Real-time validation feedback shows crop status
 4. **🔄 Move** existing crops by dragging inside the crop area
 5. **🔄 Reset** crops or all data using the reset buttons
-6. **💾 Download** organized ZIP with input and output folders
+6. **💾 Download** organized ZIP with original and crop folders
 
 ---
 
-## ✨ New Features in v2.0.0
+## ✨ New Features in v2.5.0
 
-### 🔄 Reset Functionality
-- **Reset Crop**: Clear current crop area (blue button)
-- **Reset All**: Clear all uploaded images and depth data (red button)
-- **Smart Positioning**: Reset buttons positioned in toolbar for easy access
+### 🎯 Global Drag-and-Drop Support
+- **Drop Anywhere**: Drag and drop files anywhere in the application window
+- **Multiple Formats**: Supports RGB images (.png, .jpg, .jpeg) and depth maps (.npy)
+- **Smart Detection**: Automatically detects file types and loads them appropriately
+- **Error Handling**: Proper error messages for unsupported files
 
-### 📁 Organized Download Structure
-- **Input Folder**: Contains original RGB and depth files
-- **Output Folder**: Contains cropped RGB, depth, and metadata
-- **Clean Organization**: `rgbd_crop_TIMESTAMP.zip` with proper folder structure
+### 🔧 Fixed Dimension Display Bug
+- **Accurate Validation**: Proper dimension matching between RGB and depth images
+- **Correct Display**: No more false "dimensions don't match" errors
+- **Real-time Updates**: Dimension validation updates as you load files
+
+### 🔄 Enhanced Reset Functionality
+- **Complete State Cleanup**: Proper cleanup of all states and references
+- **Canvas Reset**: Clears canvas dimensions and context properly
+- **Image Reference Cleanup**: Resets image element sources and handlers
+- **Validation Reset**: Clears validation status to prevent stale data
+
+### 📁 Updated Download Structure
+- **Original Folder**: Contains source RGB and depth files
+- **Crop Folder**: Contains cropped RGB, depth, and metadata
+- **Updated Labels**: Download button shows "Original + Crop + Metadata"
+- **Clean Organization**: `rgbd_crop_TIMESTAMP.zip` with improved folder structure
 
 ### 📊 Enhanced Status Display
 - **Immediate Dimension Check**: Shows dimension mismatch directly in status
