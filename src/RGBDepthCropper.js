@@ -71,9 +71,42 @@ const RGBDepthCropper = () => {
   }, [handleDragOver, handleDrop]);
 
 
+  // Dimension validation (runs without crop area)
+  const validateDimensions = useCallback(() => {
+    if (!imgElementRef.current || !depthData || !imageLoaded || !depthLoaded) {
+      return { isValid: false, dimensionsMatch: false, depthDimensions: null };
+    }
+
+    const img = imgElementRef.current;
+    if (!img.naturalWidth || !img.naturalHeight) {
+      return { isValid: false, dimensionsMatch: false, depthDimensions: null };
+    }
+
+    const rgbWidth = img.naturalWidth;
+    const rgbHeight = img.naturalHeight;
+    let depthWidth, depthHeight;
+
+    // Note: Depth data is stored as (height, width) but will be saved as (width, height) in NPY
+    if (depthData.shape.length === 2) {
+      [depthHeight, depthWidth] = depthData.shape;
+    } else if (depthData.shape.length === 3 && depthData.shape[2] === 1) {
+      [depthHeight, depthWidth] = depthData.shape.slice(0, 2);
+    } else {
+      return { isValid: false, dimensionsMatch: false, depthDimensions: null };
+    }
+
+    const dimensionsMatch = rgbWidth === depthWidth && rgbHeight === depthHeight;
+    return {
+      isValid: dimensionsMatch,
+      dimensionsMatch,
+      depthDimensions: { width: depthWidth, height: depthHeight }
+    };
+  }, [depthData, imageLoaded, depthLoaded]);
+
   // Comprehensive validation system
   const runValidation = useCallback(() => {
-    if (!imgElementRef.current || !depthData || !cropArea) {
+    // Early return if any required data is missing
+    if (!imgElementRef.current || !depthData || !cropArea || !imageLoaded || !depthLoaded) {
       setValidationStatus({
         isValid: false,
         issues: ['No crop area defined or data not loaded'],
@@ -83,7 +116,17 @@ const RGBDepthCropper = () => {
       return;
     }
 
+    // Additional safety check for image dimensions
     const img = imgElementRef.current;
+    if (!img.naturalWidth || !img.naturalHeight) {
+      setValidationStatus({
+        isValid: false,
+        issues: ['Image not fully loaded'],
+        warnings: [],
+        details: {}
+      });
+      return;
+    }
     const issues = [];
     const warnings = [];
     const details = {};
@@ -472,8 +515,16 @@ const RGBDepthCropper = () => {
     }
   };
 
-  // Reset all images and depth data
+    // Reset all images and depth data
   const resetAll = () => {
+    // Reset validation status first to prevent stale validation
+    setValidationStatus({
+      isValid: false,
+      issues: [],
+      warnings: [],
+      details: {}
+    });
+
     // Clear all state
     setRgbImage(null);
     setDepthData(null);
@@ -484,15 +535,7 @@ const RGBDepthCropper = () => {
     setIsDragging(false);
     setDragMode('create');
     setDragStart({ x: 0, y: 0 });
-
-    // Reset validation status
-    setValidationStatus({
-      isValid: false,
-      issues: [],
-      warnings: [],
-      details: {}
-    });
-
+    
     // Clear canvas
     const canvas = canvasRef.current;
     if (canvas) {
@@ -554,6 +597,18 @@ const RGBDepthCropper = () => {
       setCropArea(null);
     }
   }, [rgbImage]);
+
+  // Reset validation when data is cleared
+  useEffect(() => {
+    if (!imageLoaded || !depthLoaded) {
+      setValidationStatus({
+        isValid: false,
+        issues: [],
+        warnings: [],
+        details: {}
+      });
+    }
+  }, [imageLoaded, depthLoaded]);
 
 
 
@@ -801,14 +856,17 @@ const RGBDepthCropper = () => {
             <div className={imageLoaded ? 'ok' : 'not'}>RGB: {imageLoaded ? 'Loaded' : 'Not loaded'}</div>
             <div className={depthLoaded ? 'ok' : 'not'}>Depth: {depthLoaded ? 'Loaded' : 'Not loaded'}</div>
             {depthData && <div className="shape">Depth Shape: {depthData.shape.join(' × ')}</div>}
-            {imageLoaded && depthLoaded && imgElementRef.current && (
-              <div className={validationStatus.details?.dimensionsMatch ? 'ok' : 'error'}>
-                {validationStatus.details?.dimensionsMatch
-                  ? 'Dimensions: Match ✓'
-                  : `Dimensions: Do not match ✗ (RGB: ${imgElementRef.current.naturalWidth}×${imgElementRef.current.naturalHeight}, Depth: ${validationStatus.details?.depthDimensions?.width || depthData.shape[1]}×${validationStatus.details?.depthDimensions?.height || depthData.shape[0]})`
-                }
-              </div>
-            )}
+            {imageLoaded && depthLoaded && imgElementRef.current && (() => {
+              const dimValidation = validateDimensions();
+              return (
+                <div className={dimValidation.dimensionsMatch ? 'ok' : 'error'}>
+                  {dimValidation.dimensionsMatch
+                    ? 'Dimensions: Match ✓'
+                    : `Dimensions: Do not match ✗ (RGB: ${imgElementRef.current.naturalWidth}×${imgElementRef.current.naturalHeight}, Depth: ${dimValidation.depthDimensions?.width || depthData.shape[1]}×${dimValidation.depthDimensions?.height || depthData.shape[0]})`
+                  }
+                </div>
+              );
+            })()}
           </div>
 
           {/* Robust Validation Status Display */}
