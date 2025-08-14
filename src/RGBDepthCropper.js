@@ -515,7 +515,7 @@ const RGBDepthCropper = () => {
     }
   };
 
-    // Reset all images and depth data
+  // Reset all images and depth data
   const resetAll = () => {
     // Reset validation status first to prevent stale validation
     setValidationStatus({
@@ -535,7 +535,7 @@ const RGBDepthCropper = () => {
     setIsDragging(false);
     setDragMode('create');
     setDragStart({ x: 0, y: 0 });
-    
+
     // Clear canvas
     const canvas = canvasRef.current;
     if (canvas) {
