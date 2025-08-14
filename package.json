@@ -1,6 +1,6 @@
 {
   "name": "rgb-depth-cropper-tool",
-  "version": "2.0.0",
+  "version": "2.5.0",
   "description": "A modern Electron desktop app for interactively cropping RGB images and their corresponding depth maps with integrated smart validation, reset functionality, and organized download structure",
   "main": "main.js",
   "bin": {
