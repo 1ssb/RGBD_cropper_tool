@@ -1,6 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const fs = require('fs').promises;
-const { dialog } = require('@electron/remote');
 
 contextBridge.exposeInMainWorld('fs', {
   readFile: async (path) => await fs.readFile(path),
