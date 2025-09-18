@@ -43,11 +43,21 @@ const RGBDepthCropper = () => {
           setDragMode('create');
           setDragStart({ x: 0, y: 0 });
 
+          // Clear file input to avoid conflicts
+          if (rgbFileInputRef.current) {
+            rgbFileInputRef.current.value = '';
+          }
+
           const dataUrl = await readFileAsDataURL(file);
           setRgbImage(dataUrl);
           setImageLoaded(true);
           setError('');
         } else if (file.name.toLowerCase().endsWith('.npy')) {
+          // Clear file input to avoid conflicts
+          if (depthFileInputRef.current) {
+            depthFileInputRef.current.value = '';
+          }
+
           const arrayBuffer = await readFileAsArrayBuffer(file);
           const parsedData = parseNpyFile(arrayBuffer);
           setDepthData(parsedData);
@@ -317,6 +327,8 @@ const RGBDepthCropper = () => {
 
   const canvasRef = useRef(null);
   const imgElementRef = useRef(null);
+  const rgbFileInputRef = useRef(null);
+  const depthFileInputRef = useRef(null);
 
   // Helper: Read file as ArrayBuffer
   const readFileAsArrayBuffer = (file) => {
@@ -377,33 +389,41 @@ const RGBDepthCropper = () => {
   const handleRGBUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     try {
       // Clear previous crop area when loading new RGB image
       setCropArea(null);
       setIsDragging(false);
       setDragMode('create');
       setDragStart({ x: 0, y: 0 });
+      
+      // Clear any previous errors
+      setError('');
 
       const dataUrl = await readFileAsDataURL(file);
       setRgbImage(dataUrl);
       setImageLoaded(true);
-      setError('');
     } catch (err) {
       setError('Error loading RGB image: ' + err.message);
+      setImageLoaded(false);
     }
   };
 
   const handleDepthUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     try {
+      // Clear any previous errors
+      setError('');
+      
       const arrayBuffer = await readFileAsArrayBuffer(file);
       const parsedData = parseNpyFile(arrayBuffer);
       setDepthData(parsedData);
       setDepthLoaded(true);
-      setError('');
     } catch (err) {
       setError('Error loading depth.npy: ' + err.message);
+      setDepthLoaded(false);
     }
   };
 
@@ -535,6 +555,14 @@ const RGBDepthCropper = () => {
     setIsDragging(false);
     setDragMode('create');
     setDragStart({ x: 0, y: 0 });
+
+    // Clear file inputs to allow re-uploading the same files
+    if (rgbFileInputRef.current) {
+      rgbFileInputRef.current.value = '';
+    }
+    if (depthFileInputRef.current) {
+      depthFileInputRef.current.value = '';
+    }
 
     // Clear canvas
     const canvas = canvasRef.current;
@@ -763,6 +791,7 @@ const RGBDepthCropper = () => {
             <div className="rgbd-upload-group">
               <label className="rgbd-upload-label">
                 <input
+                  ref={rgbFileInputRef}
                   className="rgbd-file-input"
                   type="file"
                   accept="image/png"
@@ -780,6 +809,7 @@ const RGBDepthCropper = () => {
             <div className="rgbd-upload-group">
               <label className="rgbd-upload-label">
                 <input
+                  ref={depthFileInputRef}
                   className="rgbd-file-input"
                   type="file"
                   accept=".npy"
